@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import ApiError from "../utils/ApiError.js";
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const PASSWORD_MIN_LENGTH = 6;
@@ -59,6 +60,9 @@ userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
 };
 
 userSchema.methods.getSignedJwtToken = function getSignedJwtToken() {
+  if (!process.env.JWT_SECRET) {
+    throw new ApiError(500, "Server is not configured: JWT_SECRET environment variable is missing.");
+  }
   return jwt.sign({ id: this._id.toString() }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",
   });

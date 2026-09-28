@@ -1,14 +1,5 @@
-import ApiError from "../utils/ApiError.js";
-
-export function notFound(req, _res, next) {
-  next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
-}
-
-/**
- * Converts any thrown error into a consistent `{ success: false, message }` JSON response.
- * Express identifies error handlers by their 4 arguments, so `_next` must stay.
- */
-export function errorHandler(err, _req, res, _next) {
+/** Converts any thrown error into a consistent `{ success: false, message }` JSON response. */
+export function errorHandler(err) {
   let statusCode = err.statusCode ?? 500;
   let message = err.message || "Something went wrong.";
 
@@ -25,24 +16,13 @@ export function errorHandler(err, _req, res, _next) {
   } else if (err.name === "CastError") {
     statusCode = 400;
     message = `Invalid value for ${err.path}.`;
-  } else if (err.type === "entity.parse.failed") {
-    // Malformed JSON body
-    statusCode = 400;
-    message = "Request body must be valid JSON.";
-  } else if (err.type === "entity.too.large") {
-    statusCode = 413;
-    message = "Request body is too large.";
   }
 
   if (statusCode >= 500) {
-    console.error("[error]", err);
-    // Don't leak internals to clients in production.
-    if (process.env.NODE_ENV === "production") message = "Internal server error.";
+    console.error("[api] error:", err);
+    // Configuration errors (ApiError) carry a safe, useful message; hide anything unexpected.
+    if (!err.statusCode && process.env.NODE_ENV === "production") message = "Internal server error.";
   }
 
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(process.env.NODE_ENV === "development" && statusCode >= 500 ? { stack: err.stack } : {}),
-  });
+  return Response.json({ success: false, message }, { status: statusCode });
 }

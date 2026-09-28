@@ -1,28 +1,26 @@
 import User, { EMAIL_PATTERN, PASSWORD_MIN_LENGTH } from "../models/User.js";
+import { protect } from "../middleware/authMiddleware.js";
 import ApiError from "../utils/ApiError.js";
+import { json, readJson } from "../utils/apiHandler.js";
 
 /*
- * Express 5 forwards rejected promises from async handlers to the error
- * middleware automatically, so these controllers throw ApiError instead of
- * wrapping every body in try/catch.
+ * Controllers receive a Web Request and return a Response. They throw ApiError
+ * for expected failures; apiHandler (src/utils/apiHandler.js) turns those into
+ * `{ success: false, message }` responses.
  */
 
 const isNonEmptyString = (value) => typeof value === "string" && value.trim().length > 0;
 
-function sendTokenResponse(res, user, statusCode) {
-  res.status(statusCode).json({
-    success: true,
-    token: user.getSignedJwtToken(),
-    user: user.toJSON(),
-  });
+function tokenResponse(user, status) {
+  return json({ success: true, token: user.getSignedJwtToken(), user: user.toJSON() }, status);
 }
 
 /**
  * @route  POST /api/auth/signup
  * @access Public
  */
-export async function registerUser(req, res) {
-  const { name, email, password } = req.body ?? {};
+export async function registerUser(request) {
+  const { name, email, password } = await readJson(request);
 
   if (!isNonEmptyString(name) || !isNonEmptyString(email) || typeof password !== "string" || !password) {
     throw new ApiError(400, "Please provide your name, email and password.");
@@ -41,15 +39,15 @@ export async function registerUser(req, res) {
 
   // Only whitelisted fields are used, so clients cannot set their own role.
   const user = await User.create({ name: name.trim(), email: normalizedEmail, password });
-  sendTokenResponse(res, user, 201);
+  return tokenResponse(user, 201);
 }
 
 /**
  * @route  POST /api/auth/login
  * @access Public
  */
-export async function loginUser(req, res) {
-  const { email, password } = req.body ?? {};
+export async function loginUser(request) {
+  const { email, password } = await readJson(request);
 
   if (!isNonEmptyString(email) || typeof password !== "string" || !password) {
     throw new ApiError(400, "Please provide your email and password.");
@@ -62,13 +60,14 @@ export async function loginUser(req, res) {
     throw new ApiError(401, "Invalid email or password.");
   }
 
-  sendTokenResponse(res, user, 200);
+  return tokenResponse(user, 200);
 }
 
 /**
  * @route  GET /api/auth/me
- * @access Private
+ * @access Private (Bearer token)
  */
-export async function getMe(req, res) {
-  res.status(200).json({ success: true, user: req.user.toJSON() });
+export async function getMe(request) {
+  const user = await protect(request);
+  return json({ success: true, user: user.toJSON() });
 }
