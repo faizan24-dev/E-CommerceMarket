@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ChevronDown, Search } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
 import { categories } from "@/data/mockData";
 import { filterProducts, formatPrice, getCategoryBySlug } from "@/lib/catalog";
 
@@ -17,10 +17,16 @@ function buildSearchUrl(query, category) {
   return qs ? `/products?${qs}` : "/products";
 }
 
-export default function HeaderSearch({ autoFocus = false, onNavigate }) {
+/**
+ * Inline header search: a minimal underlined field you type into directly.
+ * Matching products appear in a dropdown with category chips to narrow them;
+ * Enter (or the icon) opens the full results page.
+ */
+export default function HeaderSearch({ className = "" }) {
   const router = useRouter();
   const id = useId();
   const listboxId = `${id}-results`;
+  const inputRef = useRef(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -34,8 +40,8 @@ export default function HeaderSearch({ autoFocus = false, onNavigate }) {
   function navigate(url) {
     setIsOpen(false);
     setActiveIndex(-1);
+    inputRef.current?.blur();
     router.push(url);
-    onNavigate?.();
   }
 
   function handleSubmit(event) {
@@ -52,17 +58,20 @@ export default function HeaderSearch({ autoFocus = false, onNavigate }) {
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((i) => (results.length ? (i <= 0 ? results.length - 1 : i - 1) : -1));
-    } else if (event.key === "Escape" && showPanel) {
-      // First Escape closes the suggestions; the next one bubbles up and closes the search panel.
-      event.stopPropagation();
+    } else if (event.key === "Escape") {
       setIsOpen(false);
       setActiveIndex(-1);
     }
   }
 
+  function selectCategory(slug) {
+    setCategory(slug);
+    setActiveIndex(-1);
+  }
+
   return (
     <div
-      className="relative w-full"
+      className={`relative ${className}`}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setIsOpen(false);
       }}
@@ -70,40 +79,13 @@ export default function HeaderSearch({ autoFocus = false, onNavigate }) {
       <form
         role="search"
         onSubmit={handleSubmit}
-        className="flex h-13 items-center rounded-full border border-line bg-white transition focus-within:border-ink/40 focus-within:shadow-[0_0_0_4px_rgba(28,27,25,0.06)]"
+        className="flex items-center border-b border-ink/60 transition-colors focus-within:border-ink hover:border-ink"
       >
-        <label htmlFor={`${id}-category`} className="sr-only">
-          Category
-        </label>
-        <div className="relative h-full shrink-0">
-          <select
-            id={`${id}-category`}
-            value={category}
-            onChange={(event) => {
-              setCategory(event.target.value);
-              setActiveIndex(-1);
-            }}
-            className="h-full max-w-28 cursor-pointer appearance-none truncate rounded-l-full bg-transparent pl-4 pr-7 text-[13px] font-medium text-ink outline-none sm:max-w-none"
-          >
-            <option value="">All categories</option>
-            {categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="pointer-events-none absolute right-2 top-1/2 size-3.5 -translate-y-1/2 text-muted"
-            aria-hidden="true"
-          />
-        </div>
-
-        <span className="h-5 w-px shrink-0 bg-line" aria-hidden="true" />
-
         <label htmlFor={`${id}-query`} className="sr-only">
-          Search digital products
+          Search products
         </label>
         <input
+          ref={inputRef}
           id={`${id}-query`}
           type="search"
           value={query}
@@ -113,38 +95,51 @@ export default function HeaderSearch({ autoFocus = false, onNavigate }) {
             setActiveIndex(-1);
           }}
           onFocus={() => setIsOpen(true)}
-          autoFocus={autoFocus}
           onKeyDown={handleKeyDown}
-          placeholder={categoryName ? `Search ${categoryName.toLowerCase()}` : "Search templates, e-books, software…"}
+          placeholder="Search"
           autoComplete="off"
           role="combobox"
           aria-expanded={showPanel}
           aria-controls={listboxId}
           aria-autocomplete="list"
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
-          className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-ink outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+          className="h-9 min-w-0 flex-1 bg-transparent text-[15px] tracking-wide text-ink outline-none placeholder:text-ink-soft [&::-webkit-search-cancel-button]:hidden"
         />
-
         <button
           type="submit"
-          className="mr-1.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink-soft"
+          className="-mr-1 flex size-8 shrink-0 items-center justify-center text-ink-soft transition hover:text-ink"
           aria-label="Search"
         >
-          <Search className="size-4" strokeWidth={2} />
+          <Search className="size-5" strokeWidth={1.5} />
         </button>
       </form>
 
       {showPanel && (
-        <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_18px_50px_-12px_rgba(28,27,25,0.25)]">
+        <div
+          // Keep focus in the input while clicking inside the dropdown (needed for Safari).
+          onMouseDown={(event) => event.preventDefault()}
+          className="absolute inset-x-0 top-full z-50 mt-3 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_18px_50px_-12px_rgba(28,27,25,0.25)] md:left-auto md:w-[26rem]"
+        >
+          <div className="flex gap-1.5 overflow-x-auto border-b border-line px-3 py-2.5 [scrollbar-width:none]">
+            {[{ slug: "", name: "All" }, ...categories].map((c) => (
+              <button
+                key={c.slug || "all"}
+                type="button"
+                onClick={() => selectCategory(c.slug)}
+                aria-pressed={category === c.slug}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs transition ${
+                  category === c.slug ? "bg-ink text-white" : "bg-canvas text-ink-soft hover:bg-cream"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
           {results.length > 0 ? (
-            <ul id={listboxId} role="listbox" aria-label="Suggested products" className="py-2">
+            <ul id={listboxId} role="listbox" aria-label="Suggested products" className="py-1.5">
               {results.map((product, index) => (
-                <li
-                  key={product.id}
-                  id={`${listboxId}-${index}`}
-                  role="option"
-                  aria-selected={index === activeIndex}
-                >
+                <li key={product.id} id={`${listboxId}-${index}`} role="option" aria-selected={index === activeIndex}>
                   <button
                     type="button"
                     onClick={() => navigate(`/products/${product.id}`)}
@@ -168,27 +163,21 @@ export default function HeaderSearch({ autoFocus = false, onNavigate }) {
               ))}
             </ul>
           ) : (
-            <div id={listboxId} className="px-4 py-5 text-sm text-muted">
+            <p id={listboxId} className="px-4 py-5 text-sm text-muted">
               No matches for <span className="font-medium text-ink">“{query.trim()}”</span>
               {categoryName ? ` in ${categoryName}` : ""}.
-              {categoryName && (
-                <button
-                  type="button"
-                  onClick={() => setCategory("")}
-                  className="ml-1 font-medium text-accent underline-offset-2 hover:underline"
-                >
-                  Search all categories
-                </button>
-              )}
-            </div>
+            </p>
           )}
+
           <button
             type="button"
             onClick={() => navigate(buildSearchUrl(query, category))}
             className="flex w-full items-center justify-between border-t border-line bg-canvas px-4 py-3 text-left text-sm font-medium text-ink transition hover:bg-cream"
           >
-            See all results for “{query.trim()}”{categoryName ? ` in ${categoryName}` : ""}
-            <ArrowRight className="size-4" />
+            <span className="truncate">
+              See all results for “{query.trim()}”{categoryName ? ` in ${categoryName}` : ""}
+            </span>
+            <ArrowRight className="size-4 shrink-0" />
           </button>
         </div>
       )}

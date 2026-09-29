@@ -3,12 +3,12 @@
 import { Suspense, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Menu, Search, ShoppingBag } from "lucide-react";
+import { Menu, ShoppingBag } from "lucide-react";
 import { categories } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import Logo from "./Logo";
 import AccountMenu from "./AccountMenu";
-import SearchPanel from "./SearchPanel";
+import HeaderSearch from "./HeaderSearch";
 import MobileMenu from "./MobileMenu";
 
 export const navLinks = [
@@ -30,7 +30,7 @@ const getServerIsScrolled = () => false;
 
 function NavLinkList({ activeHref }) {
   return (
-    <ul className="flex items-center gap-6 xl:gap-9">
+    <ul className="flex items-center gap-5 xl:gap-9">
       {navLinks.map((link) => {
         const isActive = link.href === activeHref;
         return (
@@ -65,7 +65,6 @@ function ActiveNavLinks() {
 export default function Header() {
   const { itemCount, openCart } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isScrolled = useSyncExternalStore(subscribeToScroll, getIsScrolled, getServerIsScrolled);
 
   return (
@@ -120,15 +119,7 @@ export default function Header() {
           </nav>
 
           <div className="-mr-2 flex items-center justify-end gap-0.5 sm:gap-1.5">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen((open) => !open)}
-              className="rounded-full p-2 text-ink transition hover:bg-cream"
-              aria-label="Search"
-              aria-expanded={isSearchOpen}
-            >
-              <Search className={iconClass} strokeWidth={1.6} />
-            </button>
+            <HeaderSearch className="mr-3 hidden w-52 md:block lg:mr-2 lg:w-36 xl:mr-4 xl:w-52 2xl:w-60" />
             <AccountMenu iconClassName={iconClass} className="hidden sm:block" />
             <button
               type="button"
@@ -146,7 +137,10 @@ export default function Header() {
           </div>
         </div>
 
-        <SearchPanel open={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+        {/* Phones: the search field gets its own row under the logo. */}
+        <div className="px-4 pb-3 sm:px-6 md:hidden">
+          <HeaderSearch />
+        </div>
       </header>
 
       <MobileMenu open={isMenuOpen} onClose={() => setIsMenuOpen(false)} links={navLinks} />
