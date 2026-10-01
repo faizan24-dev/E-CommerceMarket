@@ -8,9 +8,9 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <ValueProps />
       <CategoryGrid />
       <FeaturedProducts />
-      <ValueProps />
       <SellerBanner />
     </>
   );

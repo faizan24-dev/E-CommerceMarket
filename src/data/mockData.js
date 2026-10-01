@@ -187,21 +187,27 @@ export const heroSlides = [
 export const authImage = unsplash("1542435503-956c469947f6", 1200);
 export const sellerImage = unsplash("1542744094-3a31f272c490", 1200);
 
+// Feature banner shown directly below the hero slider.
 export const valueProps = [
   {
     id: "instant",
-    title: "Instant Downloads",
-    description: "Files are delivered the moment checkout completes, with no waiting and no shipping.",
+    title: "Instant Download",
+    description: "Get your digital products instantly—no waiting, no delays",
   },
   {
-    id: "verified",
-    title: "Verified Sellers",
-    description: "Every creator is reviewed and every file is scanned before it goes live.",
+    id: "quality",
+    title: "Premium Quality Products",
+    description: "Instant access to premium digital products",
   },
   {
-    id: "lifetime",
-    title: "Lifetime Access",
-    description: "Re-download purchases anytime from your library, including future updates.",
+    id: "support",
+    title: "24/7 Friendly Support",
+    description: "Our support team will always be ready to help you online",
+  },
+  {
+    id: "secure",
+    title: "100% Safe & Secure Payment",
+    description: "We ensure secure payment and accept all major credit cards",
   },
 ];
 
