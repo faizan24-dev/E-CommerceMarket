@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, LogOut, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useOverlay } from "@/hooks/useOverlay";
 import Logo from "./Logo";
 import { getInitials } from "./AccountMenu";
+import { mainLinks, shopLinks } from "./NavMenu";
 
-export default function MobileMenu({ open, onClose, links }) {
+const pageLinks = mainLinks.filter((link) => !link.children);
+const rowClass =
+  "flex items-center justify-between rounded-lg px-2 py-3 text-[15px] text-ink transition hover:bg-canvas";
+
+export default function MobileMenu({ open, onClose }) {
+  const pathname = usePathname();
   const { user, logout } = useAuth();
   useOverlay(open, onClose);
 
@@ -45,15 +52,31 @@ export default function MobileMenu({ open, onClose, links }) {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-6">
-              <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Shop</p>
+              <p className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Menu</p>
               <ul className="mt-2">
-                {links.map((link) => (
+                {pageLinks.map((link) => {
+                  const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        onClick={onClose}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`${rowClass} ${isActive ? "font-semibold" : ""}`}
+                      >
+                        {link.label}
+                        <ChevronRight className="size-4 text-muted" />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="mt-6 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Shop</p>
+              <ul className="mt-2">
+                {shopLinks.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={onClose}
-                      className="flex items-center justify-between rounded-lg px-2 py-3 text-[15px] text-ink transition hover:bg-canvas"
-                    >
+                    <Link href={link.href} onClick={onClose} className={rowClass}>
                       {link.label}
                       <ChevronRight className="size-4 text-muted" />
                     </Link>

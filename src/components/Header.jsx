@@ -2,22 +2,13 @@
 
 import { Suspense, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
 import { Menu, ShoppingBag } from "lucide-react";
-import { categories } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import Logo from "./Logo";
 import AccountMenu from "./AccountMenu";
 import HeaderSearch from "./HeaderSearch";
 import MobileMenu from "./MobileMenu";
-
-export const navLinks = [
-  { label: "New Arrivals", href: "/products" },
-  ...categories.map((category) => ({
-    label: category.name,
-    href: `/products?category=${category.slug}`,
-  })),
-];
+import ActiveNavList, { NavListFallback } from "./NavMenu";
 
 const iconClass = "size-5";
 
@@ -27,40 +18,6 @@ function subscribeToScroll(callback) {
 }
 const getIsScrolled = () => window.scrollY > 8;
 const getServerIsScrolled = () => false;
-
-function NavLinkList({ activeHref }) {
-  return (
-    <ul className="flex items-center gap-5 xl:gap-9">
-      {navLinks.map((link) => {
-        const isActive = link.href === activeHref;
-        return (
-          <li key={link.href}>
-            <Link
-              href={link.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`relative py-2 text-sm transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:bg-ink after:transition-transform after:duration-300 hover:text-ink hover:after:scale-x-100 ${
-                isActive ? "text-ink after:scale-x-100" : "text-ink-soft after:scale-x-0"
-              }`}
-            >
-              {link.label}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-// Reads the URL to underline the current category. Kept in its own Suspense
-// boundary so useSearchParams doesn't opt every page out of static rendering.
-function ActiveNavLinks() {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const category = searchParams.get("category");
-  const activeHref =
-    pathname === "/products" ? (category ? `/products?category=${category}` : "/products") : null;
-  return <NavLinkList activeHref={activeHref} />;
-}
 
 export default function Header() {
   const { itemCount, openCart } = useCart();
@@ -113,13 +70,13 @@ export default function Header() {
           </div>
 
           <nav aria-label="Main" className="hidden lg:block">
-            <Suspense fallback={<NavLinkList activeHref={null} />}>
-              <ActiveNavLinks />
+            <Suspense fallback={<NavListFallback />}>
+              <ActiveNavList />
             </Suspense>
           </nav>
 
           <div className="-mr-2 flex items-center justify-end gap-0.5 sm:gap-1.5">
-            <HeaderSearch className="mr-3 hidden w-52 md:block lg:mr-2 lg:w-36 xl:mr-4 xl:w-52 2xl:w-60" />
+            <HeaderSearch className="mr-3 hidden w-52 md:block lg:mr-2 lg:w-44 xl:mr-4 xl:w-56 2xl:w-60" />
             <AccountMenu iconClassName={iconClass} className="hidden sm:block" />
             <button
               type="button"
@@ -143,7 +100,7 @@ export default function Header() {
         </div>
       </header>
 
-      <MobileMenu open={isMenuOpen} onClose={() => setIsMenuOpen(false)} links={navLinks} />
+      <MobileMenu open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </>
   );
 }

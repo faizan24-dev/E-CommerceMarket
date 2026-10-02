@@ -2,6 +2,9 @@ import { products } from "@/data/mockData";
 import ProductCard from "@/components/ProductCard";
 import SectionHeading from "./SectionHeading";
 
+// Paid products only; the weekly freebie has its own card in Curated Collections.
+const featured = products.filter((p) => p.price > 0).slice(0, 8);
+
 export default function FeaturedProducts() {
   return (
     <section id="featured" className="scroll-mt-32 border-t border-line bg-white">
@@ -13,7 +16,7 @@ export default function FeaturedProducts() {
           action={{ href: "/products", label: "Shop everything" }}
         />
         <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
+          {featured.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

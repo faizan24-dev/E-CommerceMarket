@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { SearchX, X } from "lucide-react";
 import { categories } from "@/data/mockData";
-import { filterProducts, getCategoryBySlug } from "@/lib/catalog";
+import { filterProducts, formatPrice, getBundle, getCategoryBySlug } from "@/lib/catalog";
+import AddBundleButton from "@/components/AddBundleButton";
 import ProductCard from "@/components/ProductCard";
 
 export const metadata = {
@@ -22,9 +23,11 @@ export default async function ProductsPage({ searchParams }) {
   const q = typeof params.q === "string" ? params.q.trim() : "";
   const activeCategory = getCategoryBySlug(typeof params.category === "string" ? params.category : "");
   const categorySlug = activeCategory?.slug ?? "";
-  const results = filterProducts({ query: q, category: categorySlug });
+  // ?bundle=<slug> shows the products in a bundle (linked from the home page Collections cards).
+  const bundle = typeof params.bundle === "string" ? getBundle(params.bundle) : null;
+  const results = bundle ? bundle.items : filterProducts({ query: q, category: categorySlug });
 
-  const heading = q ? `Results for “${q}”` : activeCategory ? activeCategory.name : "All digital products";
+  const heading = bundle ? bundle.title : q ?`Results for “${q}”` : activeCategory ? activeCategory.name : "All digital products";
   const pills = [{ slug: "", name: "All" }, ...categories];
 
   return (
@@ -34,22 +37,35 @@ export default async function ProductsPage({ searchParams }) {
           Home
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-ink">{activeCategory ? activeCategory.name : "Shop"}</span>
+        <span className="text-ink">{bundle ? "Bundle" : activeCategory ? activeCategory.name : "Shop"}</span>
       </nav>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-serif text-4xl tracking-tight text-ink sm:text-5xl">{heading}</h1>
           <p className="mt-2 text-sm text-muted">
+            {bundle ? `${bundle.subtitle} ` : ""}
             {results.length} {results.length === 1 ? "product" : "products"}
             {q && activeCategory ? ` in ${activeCategory.name}` : ""} · Instant download on every item
           </p>
         </div>
       </div>
 
+      {bundle && (
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-line bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <p className="text-sm text-muted">
+            Buy all {bundle.items.length} together:{" "}
+            <span className="mr-1 line-through">{formatPrice(bundle.total)}</span>{" "}
+            <span className="text-lg font-semibold text-ink">{formatPrice(bundle.bundlePrice)}</span>
+            <span className="ml-2 text-xs text-success">10% bundle savings applied in your cart</span>
+          </p>
+          <AddBundleButton productIds={bundle.productIds} />
+        </div>
+      )}
+
       <div className="mt-8 flex flex-wrap items-center gap-2 border-b border-line pb-6">
         {pills.map((pill) => {
-          const isActive = pill.slug === categorySlug;
+          const isActive = !bundle && pill.slug === categorySlug;
           return (
             <Link
               key={pill.slug || "all"}
