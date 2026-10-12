@@ -1,11 +1,8 @@
-import { products } from "@/data/mockData";
-import ProductCard from "@/components/ProductCard";
-import SectionHeading from "./SectionHeading";
+import { ProductGrid } from "@/components/product/ProductCard";
+import SectionHeading from "@/components/ui/SectionHeading";
 
-// Paid products only; the weekly freebie has its own card in Curated Collections.
-const featured = products.filter((p) => p.price > 0).slice(0, 8);
-
-export default function FeaturedProducts() {
+export default function FeaturedProducts({ products }) {
+  if (!products.length) return null;
   return (
     <section id="featured" className="scroll-mt-32 border-t border-line bg-white">
       <div className="mx-auto max-w-[90rem] px-4 py-16 sm:px-6 lg:px-10 lg:py-24">
@@ -15,11 +12,7 @@ export default function FeaturedProducts() {
           description="This week's most-loved downloads, chosen for craft, usefulness and glowing reviews."
           action={{ href: "/products", label: "Shop everything" }}
         />
-        <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <ProductGrid products={products} className="mt-10" />
       </div>
     </section>
   );

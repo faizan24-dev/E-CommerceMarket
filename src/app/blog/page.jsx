@@ -1,6 +1,7 @@
-import Link from "next/link";
-import { blogPosts } from "@/data/mockData";
-import BlogCard from "@/components/BlogCard";
+import BlogCard from "@/components/blog/BlogCard";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import Container from "@/components/ui/Container";
+import { blogPosts } from "@/content/blog";
 
 export const metadata = {
   title: "Blog",
@@ -9,14 +10,8 @@ export const metadata = {
 
 export default function BlogPage() {
   return (
-    <div className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
-      <nav aria-label="Breadcrumb" className="text-xs text-muted">
-        <Link href="/" className="hover:text-ink">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">Blog</span>
-      </nav>
+    <Container className="py-10 lg:py-14">
+      <Breadcrumbs items={[{ label: "Blog" }]} />
 
       <header className="mt-6 max-w-2xl">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">The Journal</p>
@@ -33,6 +28,6 @@ export default function BlogPage() {
           <BlogCard key={post.slug} post={post} priority={index < 3} />
         ))}
       </div>
-    </div>
+    </Container>
   );
 }

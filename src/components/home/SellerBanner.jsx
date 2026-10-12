@@ -1,9 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { sellerImage } from "@/data/mockData";
+import { COMMISSION_RATE } from "@/config/marketplace";
+import { sellerImage } from "@/content/images";
 
-const perks = ["Keep 90% of every sale", "Automatic file delivery", "Payouts every week"];
+const perks = [
+  `Keep ${Math.round((1 - COMMISSION_RATE) * 100)}% of every sale`,
+  "Private, automatic file delivery",
+  "Track every sale and payout in your dashboard",
+];
 
 export default function SellerBanner() {
   return (
@@ -16,7 +21,7 @@ export default function SellerBanner() {
           </h2>
           <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/70">
             Sell templates, apps, e-books and graphics to buyers who value quality. We handle checkout,
-            hosting and delivery, so you can keep creating.
+            hosting and delivery, and send your earnings straight to your bank account.
           </p>
           <ul className="mt-6 space-y-2 text-sm text-white/85">
             {perks.map((perk) => (
@@ -27,10 +32,10 @@ export default function SellerBanner() {
             ))}
           </ul>
           <Link
-            href="/signup"
+            href="/sell"
             className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-ink transition hover:bg-cream"
           >
-            Open your shop <ArrowRight className="size-4" />
+            Open your shop <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </div>
         <div className="relative min-h-64 lg:min-h-full">

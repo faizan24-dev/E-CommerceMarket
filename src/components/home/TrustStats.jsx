@@ -1,11 +1,9 @@
-import { trustStats } from "@/data/mockData";
-import { getStoreStats } from "@/lib/catalog";
+import { trustStats } from "@/content/home";
 
-/** Minimal 4-column stat bar. */
-export default function TrustStats() {
-  const { averageRating } = getStoreStats();
+/** Minimal 4-column stat bar. The rating row is filled in from live catalog stats. */
+export default function TrustStats({ averageRating }) {
   const stats = trustStats.map((stat) =>
-    stat.id === "rating" ? { ...stat, value: `${averageRating.toFixed(1)} / 5.0` } : stat,
+    stat.id === "rating" ? { ...stat, value: averageRating ? `${averageRating.toFixed(1)} / 5.0` : "New" } : stat,
   );
 
   return (

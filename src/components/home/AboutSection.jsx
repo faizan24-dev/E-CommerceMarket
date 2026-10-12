@@ -1,18 +1,16 @@
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
-import { aboutImage, aboutValues } from "@/data/mockData";
-import { getStoreStats } from "@/lib/catalog";
+import Button from "@/components/ui/Button";
+import { aboutValues } from "@/content/home";
+import { aboutImage } from "@/content/images";
+import { formatCompact } from "@/lib/format";
 
-const compact = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
-
-/** Split layout: editorial image on one side, brand story, values and key numbers on the other. */
-export default function AboutSection({ showLink = true }) {
-  const stats = getStoreStats();
+/** Split layout: editorial image on one side, brand story, values and live catalog numbers on the other. */
+export default function AboutSection({ stats, showLink = true }) {
   const metrics = [
     { value: stats.productCount, label: "Digital products" },
-    { value: `${compact.format(stats.totalReviews)}+`, label: "Verified reviews" },
-    { value: stats.averageRating.toFixed(1), label: "Average rating" },
+    { value: `${formatCompact(stats.totalReviews)}+`, label: "Verified reviews" },
+    { value: stats.averageRating ? stats.averageRating.toFixed(1) : "New", label: "Average rating" },
     { value: stats.categoryCount, label: "Categories" },
   ];
 
@@ -36,12 +34,12 @@ export default function AboutSection({ showLink = true }) {
           </h2>
           <div className="mt-5 space-y-4 text-[15px] leading-relaxed text-muted">
             <p>
-              Ecommerce Market started with a simple idea: buying a template or an e-book should feel as
-              considered as shopping in a well-run design store, not like digging through a download site.
+              Ecommerce Market started with a simple idea: buying a template or an e-book should feel as considered as
+              shopping in a well-run design store, not like digging through a download site.
             </p>
             <p>
-              We work with independent creators to bring you tools that are thoughtfully made, clearly
-              described and ready the moment you need them.
+              We work with independent creators to bring you tools that are thoughtfully made, clearly described and
+              ready the moment you need them.
             </p>
           </div>
 
@@ -70,12 +68,9 @@ export default function AboutSection({ showLink = true }) {
           </dl>
 
           {showLink && (
-            <Link
-              href="/about"
-              className="mt-10 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-white transition hover:bg-ink-soft"
-            >
-              Read our story <ArrowRight className="size-4" />
-            </Link>
+            <Button href="/about" iconRight={ArrowRight} className="mt-10">
+              Read our story
+            </Button>
           )}
         </div>
       </div>

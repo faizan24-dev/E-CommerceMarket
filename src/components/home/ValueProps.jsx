@@ -1,5 +1,5 @@
 import { BadgeCheck, Download, Headset, ShieldCheck } from "lucide-react";
-import { valueProps } from "@/data/mockData";
+import { valueProps } from "@/content/home";
 
 const icons = {
   instant: Download,

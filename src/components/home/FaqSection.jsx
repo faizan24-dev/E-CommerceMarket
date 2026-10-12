@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
-import { faqs } from "@/data/mockData";
+import { faqs } from "@/content/home";
 
 /**
  * Accordion built on native <details>: works without JavaScript, is keyboard
@@ -23,7 +23,7 @@ export default function FaqSection() {
               href="/blog"
               className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink underline decoration-line decoration-2 underline-offset-4 transition hover:decoration-ink"
             >
-              Read the guides <ArrowRight className="size-4" />
+              Read the guides <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -37,7 +37,7 @@ export default function FaqSection() {
                   className="flex size-8 shrink-0 items-center justify-center rounded-full border border-line text-ink transition duration-300 group-open:rotate-45 group-open:border-ink group-open:bg-ink group-open:text-white"
                   aria-hidden="true"
                 >
-                  <Plus className="size-4" />
+                  <Plus className="size-4" aria-hidden="true" />
                 </span>
               </summary>
               <p className="-mt-1 max-w-2xl pb-6 pr-12 text-[15px] leading-relaxed text-muted">{faq.answer}</p>

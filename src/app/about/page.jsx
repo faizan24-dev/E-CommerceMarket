@@ -1,33 +1,38 @@
-import Link from "next/link";
 import AboutSection from "@/components/home/AboutSection";
-import Testimonials from "@/components/home/Testimonials";
 import FaqSection from "@/components/home/FaqSection";
+import Testimonials from "@/components/home/Testimonials";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import Container from "@/components/ui/Container";
+import { testimonials } from "@/content/home";
+import { preparePageData } from "@/server/page";
+import { getCatalogStats, getPublishedProductsBySlugs } from "@/server/services/productService";
 
 export const metadata = {
   title: "About us",
-  description: "The story behind Ecommerce Market, a curated marketplace for templates, software, e-books and graphics.",
+  description: "The story behind Ecommerce Market, a curated marketplace for templates, e-books, software and graphics.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  await preparePageData();
+  const [stats, linked] = await Promise.all([
+    getCatalogStats(),
+    getPublishedProductsBySlugs(testimonials.map((t) => t.productSlug)),
+  ]);
+  const productTitles = Object.fromEntries(linked.map((p) => [p.slug, p.title]));
+
   return (
     <>
-      <div className="mx-auto max-w-[90rem] px-4 pb-4 pt-10 sm:px-6 lg:px-10 lg:pt-14">
-        <nav aria-label="Breadcrumb" className="text-xs text-muted">
-          <Link href="/" className="hover:text-ink">
-            Home
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-ink">About us</span>
-        </nav>
+      <Container className="pb-4 pt-10 lg:pt-14">
+        <Breadcrumbs items={[{ label: "About us" }]} />
         <header className="mt-6 max-w-3xl pb-6">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">Our story</p>
           <h1 className="mt-3 font-serif text-4xl tracking-tight text-ink sm:text-5xl lg:text-6xl">
             Thoughtfully made tools, delivered the moment you need them.
           </h1>
         </header>
-      </div>
-      <AboutSection showLink={false} />
-      <Testimonials />
+      </Container>
+      <AboutSection stats={stats} showLink={false} />
+      <Testimonials stats={stats} productTitles={productTitles} />
       <FaqSection />
     </>
   );

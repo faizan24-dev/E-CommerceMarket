@@ -3,18 +3,13 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import Alert from "@/components/ui/Alert";
+import Button from "@/components/ui/Button";
+import { TextField } from "@/components/ui/Field";
+import { signupUrl } from "@/lib/routes";
 import { getSafeRedirect, validateEmail, validateLoginPassword } from "@/lib/validation";
-import FormField from "./FormField";
-import {
-  FormAlert,
-  FormSkeleton,
-  FormSuccess,
-  PasswordToggle,
-  SIGNUP_EMAIL_KEY,
-  SignedInNotice,
-  SubmitButton,
-} from "./AuthParts";
+import { useAuthStore } from "@/store/authStore";
+import { FormSkeleton, PasswordToggle, SIGNUP_EMAIL_KEY, SignedInNotice } from "./AuthParts";
 
 function readSignupEmail() {
   try {
@@ -29,7 +24,7 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = getSafeRedirect(searchParams.get("next"));
   const justRegistered = searchParams.get("registered") === "1";
-  const { login, user, isReady } = useAuth();
+  const { login, user, status: authStatus } = useAuthStore();
 
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
@@ -50,7 +45,7 @@ export default function LoginForm() {
   };
   const visibleError = (field) => (touched[field] || submitAttempted ? errors[field] : "");
 
-  if (!isReady) return <FormSkeleton fields={2} />;
+  if (authStatus === "loading") return <FormSkeleton fields={2} />;
   if (user && status === "idle") return <SignedInNotice redirectTo={redirectTo} />;
 
   function handleChange(event) {
@@ -74,7 +69,7 @@ export default function LoginForm() {
 
     setStatus("submitting");
     try {
-      await login(values);
+      await login({ email: values.email.trim(), password: values.password });
       setStatus("success");
       try {
         sessionStorage.removeItem(SIGNUP_EMAIL_KEY);
@@ -82,6 +77,7 @@ export default function LoginForm() {
         // Nothing to clean up if storage is unavailable.
       }
       router.push(redirectTo);
+      router.refresh();
     } catch (error) {
       setFormError(error.message);
       setStatus("idle");
@@ -91,11 +87,17 @@ export default function LoginForm() {
   return (
     <>
       {justRegistered && !formError && status !== "success" && (
-        <FormSuccess message="Account created successfully! Please log in to continue." />
+        <Alert tone="success" className="mb-6">
+          Account created successfully. Please log in to continue.
+        </Alert>
       )}
-      <FormAlert message={formError} />
+      {formError && (
+        <Alert tone="error" className="mb-6">
+          {formError}
+        </Alert>
+      )}
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        <FormField
+        <TextField
           ref={emailRef}
           id="email"
           label="Email address"
@@ -108,7 +110,7 @@ export default function LoginForm() {
           onBlur={handleBlur}
           error={visibleError("email")}
         />
-        <FormField
+        <TextField
           ref={passwordRef}
           id="password"
           label="Password"
@@ -122,22 +124,14 @@ export default function LoginForm() {
           error={visibleError("password")}
           trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
         />
-        <SubmitButton
-          isSubmitting={status === "submitting"}
-          isSuccess={status === "success"}
-          submittingLabel="Logging in…"
-          successLabel="Signed in, redirecting…"
-        >
-          Log in
-        </SubmitButton>
+        <Button type="submit" size="lg" fullWidth isLoading={status === "submitting"} disabled={status === "success"}>
+          {status === "success" ? "Signed in, redirecting..." : status === "submitting" ? "Logging in..." : "Log in"}
+        </Button>
       </form>
 
       <p className="mt-8 text-center text-sm text-muted">
         New to Ecommerce Market?{" "}
-        <Link
-          href={redirectTo === "/" ? "/signup" : `/signup?next=${encodeURIComponent(redirectTo)}`}
-          className="font-medium text-ink underline underline-offset-4 hover:text-accent"
-        >
+        <Link href={signupUrl(redirectTo)} className="font-medium text-ink underline underline-offset-4 hover:text-accent">
           Create an account
         </Link>
       </p>

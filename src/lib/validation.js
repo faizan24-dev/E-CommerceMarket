@@ -1,10 +1,24 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+/*
+ * Validation rules shared by client forms and the API, so both enforce the
+ * same limits. Client validators return an error message or "".
+ */
+
+export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const NAME_MIN_LENGTH = 2;
+export const NAME_MAX_LENGTH = 60;
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128; // bcrypt ignores bytes past 72; this also bounds hashing cost
+export const PASSWORD_RULE_MESSAGE = "Include at least one letter and one number.";
+
+export function isStrongEnoughPassword(value) {
+  return /[a-zA-Z]/.test(value) && /\d/.test(value);
+}
 
 export function validateName(value) {
   const name = value.trim();
   if (!name) return "Please enter your full name.";
-  if (name.length < 2) return "Name must be at least 2 characters.";
-  if (name.length > 60) return "Name must be 60 characters or fewer.";
+  if (name.length < NAME_MIN_LENGTH) return `Name must be at least ${NAME_MIN_LENGTH} characters.`;
+  if (name.length > NAME_MAX_LENGTH) return `Name must be ${NAME_MAX_LENGTH} characters or fewer.`;
   return "";
 }
 
@@ -16,18 +30,18 @@ export function validateEmail(value) {
 }
 
 export function validateLoginPassword(value) {
-  if (!value) return "Please enter your password.";
-  return "";
+  return value ? "" : "Please enter your password.";
 }
 
 export function validateNewPassword(value) {
   if (!value) return "Please create a password.";
-  if (value.length < 8) return "Use at least 8 characters.";
-  if (!/[a-zA-Z]/.test(value) || !/\d/.test(value)) return "Include at least one letter and one number.";
+  if (value.length < PASSWORD_MIN_LENGTH) return `Use at least ${PASSWORD_MIN_LENGTH} characters.`;
+  if (value.length > PASSWORD_MAX_LENGTH) return `Use ${PASSWORD_MAX_LENGTH} characters or fewer.`;
+  if (!isStrongEnoughPassword(value)) return PASSWORD_RULE_MESSAGE;
   return "";
 }
 
-/** Returns a 0–4 score with a label, used for the sign-up strength meter. */
+/** Returns a 0-4 score with a label, used for the sign-up strength meter. */
 export function getPasswordStrength(value) {
   if (!value) return { score: 0, label: "" };
   let score = 0;
@@ -39,8 +53,10 @@ export function getPasswordStrength(value) {
   return { score, label: labels[score] };
 }
 
-/** Only allow same-origin relative redirects such as "/products". */
+/** Only allows same-origin relative redirects such as "/products", never "//evil.com". */
 export function getSafeRedirect(value, fallback = "/") {
-  if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) return value;
+  if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\")) {
+    return value;
+  }
   return fallback;
 }

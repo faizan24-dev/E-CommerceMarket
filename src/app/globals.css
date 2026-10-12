@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Ecommerce Market design tokens — a warm, neutral editorial palette
- * inspired by Faire: off-white canvas, crisp ink, soft #E5E7EB borders.
+ * Design tokens: a warm, neutral editorial palette. Solid colors only;
+ * the design deliberately uses no gradients.
  */
 @theme inline {
   --color-canvas: #faf8f5;
@@ -15,6 +15,8 @@
   --color-accent: #9a5b3c;
   --color-accent-soft: #f4e8df;
   --color-success: #2f6b4f;
+  --color-warning: #8a5a00;
+  --color-info: #2d5b8a;
   --color-danger: #b42318;
 
   --font-sans: var(--font-inter);
@@ -45,6 +47,11 @@ body {
 
 ::selection {
   background: var(--color-sand);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

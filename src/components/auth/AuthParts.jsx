@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { CircleAlert, CircleCheck, Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
+import Button from "@/components/ui/Button";
+import { useLogout } from "@/hooks/useLogout";
+import { getPasswordStrength } from "@/lib/validation";
+import { useAuthStore } from "@/store/authStore";
 
 // Hands the new account's email from the sign-up page to the login page without putting it in the URL.
 export const SIGNUP_EMAIL_KEY = "em_signup_email";
@@ -16,52 +18,36 @@ export function PasswordToggle({ visible, onToggle }) {
       aria-label={visible ? "Hide password" : "Show password"}
       aria-pressed={visible}
     >
-      {visible ? <EyeOff className="size-4.5" /> : <Eye className="size-4.5" />}
+      {visible ? <EyeOff className="size-4.5" aria-hidden="true" /> : <Eye className="size-4.5" aria-hidden="true" />}
     </button>
   );
 }
 
-export function FormAlert({ message }) {
-  if (!message) return null;
-  return (
-    <div
-      role="alert"
-      className="mb-6 flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger"
-    >
-      <CircleAlert className="mt-0.5 size-4 shrink-0" />
-      {message}
-    </div>
-  );
-}
+const STRENGTH_COLORS = ["bg-sand", "bg-danger", "bg-warning", "bg-info", "bg-success"];
 
-export function FormSuccess({ message }) {
-  if (!message) return null;
+export function PasswordStrength({ password }) {
+  const { score, label } = getPasswordStrength(password);
+  if (!password) return null;
   return (
-    <div
-      role="status"
-      className="mb-6 flex items-start gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3 text-sm text-success"
-    >
-      <CircleCheck className="mt-0.5 size-4 shrink-0" />
-      {message}
+    <div className="mt-2.5" aria-live="polite">
+      <div className="flex gap-1.5">
+        {[1, 2, 3, 4].map((step) => (
+          <span
+            key={step}
+            className={`h-1 flex-1 rounded-full transition-colors ${score >= step ? STRENGTH_COLORS[score] : "bg-line"}`}
+          />
+        ))}
+      </div>
+      <p className="mt-1.5 text-xs text-muted">
+        Password strength: <span className="font-medium text-ink">{label}</span>
+      </p>
     </div>
-  );
-}
-
-export function SubmitButton({ isSubmitting, isSuccess, children, submittingLabel, successLabel }) {
-  return (
-    <button
-      type="submit"
-      disabled={isSubmitting || isSuccess}
-      className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-[15px] font-medium text-white transition hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-80"
-    >
-      {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-      {isSuccess ? successLabel : isSubmitting ? submittingLabel : children}
-    </button>
   );
 }
 
 export function SignedInNotice({ redirectTo }) {
-  const { user, logout } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const logout = useLogout();
   return (
     <div className="rounded-2xl border border-line bg-white p-6">
       <p className="text-[15px] text-ink">
@@ -69,19 +55,10 @@ export function SignedInNotice({ redirectTo }) {
         <span className="text-muted">({user.email})</span>.
       </p>
       <div className="mt-5 flex flex-wrap gap-3">
-        <Link
-          href={redirectTo}
-          className="rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-soft"
-        >
-          Continue shopping
-        </Link>
-        <button
-          type="button"
-          onClick={() => logout({ redirectTo: null })}
-          className="rounded-full border border-line px-5 py-2.5 text-sm font-medium text-ink transition hover:border-ink"
-        >
+        <Button href={redirectTo}>Continue</Button>
+        <Button variant="secondary" onClick={() => logout({ redirectTo: null })}>
           Use a different account
-        </button>
+        </Button>
       </div>
     </div>
   );

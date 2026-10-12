@@ -86,11 +86,12 @@ export default function HeroSlider({ slides }) {
             sizes="(min-width: 1440px) 1360px, 100vw"
             className="pointer-events-none select-none object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent sm:bg-gradient-to-r sm:from-black/65 sm:via-black/25 sm:to-transparent" />
+          {/* Solid tint (no gradient) so white text stays readable on any photo. */}
+          <div className="absolute inset-0 bg-black/45" />
 
           <div className="absolute inset-x-0 bottom-0 max-w-2xl px-6 pb-16 text-white sm:inset-y-0 sm:flex sm:flex-col sm:justify-center sm:px-12 sm:pb-0 lg:px-16">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/75">
-              {slide.tag ?? "Featured"} · {slide.category}
+              {slide.eyebrow}
             </p>
             <h2 className="mt-3 font-serif text-[28px] leading-[1.08] tracking-tight sm:text-4xl md:text-5xl xl:text-6xl">
               {slide.headline}
@@ -98,17 +99,17 @@ export default function HeroSlider({ slides }) {
             <p className="mt-4 max-w-md text-sm leading-relaxed text-white/80 sm:text-base">{slide.subline}</p>
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link
-                href={slide.productHref}
+                href={slide.primaryHref}
                 className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-ink transition hover:bg-cream"
               >
-                Shop now · {slide.price}
-                <ArrowRight className="size-4" />
+                {slide.primaryLabel}
+                <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
               <Link
                 href={slide.categoryHref}
                 className="text-sm font-medium text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white"
               >
-                Browse {slide.category}
+                Browse {slide.categoryName}
               </Link>
             </div>
           </div>
@@ -122,7 +123,7 @@ export default function HeroSlider({ slides }) {
       <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2 sm:bottom-7">
         {slides.map((item, i) => (
           <button
-            key={item.productId}
+            key={item.key}
             type="button"
             onClick={() => goTo(i, i > index ? 1 : -1)}
             className="group flex h-6 items-center"
@@ -145,7 +146,7 @@ export default function HeroSlider({ slides }) {
           className="flex size-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/30"
           aria-label={isPausedByUser ? "Play slideshow" : "Pause slideshow"}
         >
-          {isPausedByUser ? <Play className="size-4" /> : <Pause className="size-4" />}
+          {isPausedByUser ? <Play className="size-4" aria-hidden="true" /> : <Pause className="size-4" aria-hidden="true" />}
         </button>
         <button
           type="button"
@@ -153,7 +154,7 @@ export default function HeroSlider({ slides }) {
           className="hidden size-10 items-center justify-center rounded-full bg-white text-ink shadow-sm transition hover:bg-cream sm:flex"
           aria-label="Previous slide"
         >
-          <ChevronLeft className="size-5" />
+          <ChevronLeft className="size-5" aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -161,7 +162,7 @@ export default function HeroSlider({ slides }) {
           className="hidden size-10 items-center justify-center rounded-full bg-white text-ink shadow-sm transition hover:bg-cream sm:flex"
           aria-label="Next slide"
         >
-          <ChevronRight className="size-5" />
+          <ChevronRight className="size-5" aria-hidden="true" />
         </button>
       </div>
     </div>

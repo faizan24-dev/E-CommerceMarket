@@ -1,56 +1,47 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { blogPosts } from "@/data/mockData";
-import { formatDate, getPostBySlug } from "@/lib/catalog";
-import BlogCard from "@/components/BlogCard";
+import BlogCard from "@/components/blog/BlogCard";
+import Breadcrumbs from "@/components/ui/Breadcrumbs";
+import Button from "@/components/ui/Button";
+import Container from "@/components/ui/Container";
+import { blogPosts, getPostBySlug } from "@/content/blog";
+import { formatDate } from "@/lib/format";
 
 export function generateStaticParams() {
   return blogPosts.map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params;
-  const post = getPostBySlug(slug);
-  if (!post) return { title: "Article not found" };
-  return { title: post.title, description: post.excerpt };
+  const post = getPostBySlug((await params).slug);
+  return post ? { title: post.title, description: post.excerpt } : { title: "Article not found" };
 }
 
 export default async function BlogPostPage({ params }) {
-  const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPostBySlug((await params).slug);
   if (!post) notFound();
 
   const morePosts = blogPosts.filter((p) => p.slug !== post.slug).slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-[90rem] px-4 py-10 sm:px-6 lg:px-10 lg:py-14">
-      <nav aria-label="Breadcrumb" className="text-xs text-muted">
-        <Link href="/" className="hover:text-ink">
-          Home
-        </Link>
-        <span className="mx-2">/</span>
-        <Link href="/blog" className="hover:text-ink">
-          Blog
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-ink">{post.category}</span>
-      </nav>
+    <Container className="py-10 lg:py-14">
+      <Breadcrumbs items={[{ label: "Blog", href: "/blog" }, { label: post.category }]} />
 
       <article className="mt-8">
         <header className="mx-auto max-w-3xl text-center">
           <span className="inline-block rounded-full border border-line bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink">
             {post.category}
           </span>
-          <h1 className="mt-5 font-serif text-3xl leading-tight tracking-tight text-ink sm:text-5xl">
-            {post.title}
-          </h1>
+          <h1 className="mt-5 font-serif text-3xl leading-tight tracking-tight text-ink sm:text-5xl">{post.title}</h1>
           <p className="mt-5 text-sm text-muted">
             By <span className="font-medium text-ink">{post.author}</span>
-            <span className="mx-2" aria-hidden="true">·</span>
+            <span className="mx-2" aria-hidden="true">
+              |
+            </span>
             {formatDate(post.date)}
-            <span className="mx-2" aria-hidden="true">·</span>
+            <span className="mx-2" aria-hidden="true">
+              |
+            </span>
             {post.readTime}
           </p>
         </header>
@@ -67,12 +58,9 @@ export default async function BlogPostPage({ params }) {
         </div>
 
         <div className="mx-auto mt-12 max-w-2xl border-t border-line pt-8">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-5 py-2.5 text-sm font-medium text-ink transition hover:border-ink"
-          >
-            <ArrowLeft className="size-4" /> Back to all articles
-          </Link>
+          <Button href="/blog" variant="secondary" icon={ArrowLeft}>
+            Back to all articles
+          </Button>
         </div>
       </article>
 
@@ -84,6 +72,6 @@ export default async function BlogPostPage({ params }) {
           ))}
         </div>
       </section>
-    </div>
+    </Container>
   );
 }

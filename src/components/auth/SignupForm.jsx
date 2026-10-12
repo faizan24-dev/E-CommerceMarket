@@ -3,53 +3,19 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import {
-  getPasswordStrength,
-  getSafeRedirect,
-  validateEmail,
-  validateName,
-  validateNewPassword,
-} from "@/lib/validation";
-import FormField from "./FormField";
-import {
-  FormAlert,
-  FormSkeleton,
-  PasswordToggle,
-  SIGNUP_EMAIL_KEY,
-  SignedInNotice,
-  SubmitButton,
-} from "./AuthParts";
-
-const strengthColors = ["bg-sand", "bg-danger", "bg-amber-500", "bg-lime-600", "bg-success"];
-
-function PasswordStrength({ password }) {
-  const { score, label } = getPasswordStrength(password);
-  if (!password) return null;
-  return (
-    <div className="mt-2.5" aria-live="polite">
-      <div className="flex gap-1.5">
-        {[1, 2, 3, 4].map((step) => (
-          <span
-            key={step}
-            className={`h-1 flex-1 rounded-full transition-colors ${
-              score >= step ? strengthColors[score] : "bg-line"
-            }`}
-          />
-        ))}
-      </div>
-      <p className="mt-1.5 text-xs text-muted">
-        Password strength: <span className="font-medium text-ink">{label}</span>
-      </p>
-    </div>
-  );
-}
+import Alert from "@/components/ui/Alert";
+import Button from "@/components/ui/Button";
+import { TextField } from "@/components/ui/Field";
+import { loginUrl } from "@/lib/routes";
+import { getSafeRedirect, PASSWORD_MIN_LENGTH, validateEmail, validateName, validateNewPassword } from "@/lib/validation";
+import { useAuthStore } from "@/store/authStore";
+import { FormSkeleton, PasswordStrength, PasswordToggle, SIGNUP_EMAIL_KEY, SignedInNotice } from "./AuthParts";
 
 export default function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = getSafeRedirect(searchParams.get("next"));
-  const { signup, user, isReady } = useAuth();
+  const { signup, user, status: authStatus } = useAuthStore();
 
   const nameRef = useRef(null);
   const emailRef = useRef(null);
@@ -60,20 +26,22 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState("idle"); // idle | submitting | success
   const [formError, setFormError] = useState("");
+  const [serverErrors, setServerErrors] = useState({});
 
   const errors = {
-    name: validateName(values.name),
-    email: validateEmail(values.email),
-    password: validateNewPassword(values.password),
+    name: validateName(values.name) || serverErrors.name,
+    email: validateEmail(values.email) || serverErrors.email,
+    password: validateNewPassword(values.password) || serverErrors.password,
   };
   const visibleError = (field) => (touched[field] || submitAttempted ? errors[field] : "");
 
-  if (!isReady) return <FormSkeleton fields={3} />;
+  if (authStatus === "loading") return <FormSkeleton fields={3} />;
   if (user && status === "idle") return <SignedInNotice redirectTo={redirectTo} />;
 
   function handleChange(event) {
     const { name, value } = event.target;
     setValues((current) => ({ ...current, [name]: value }));
+    setServerErrors((current) => ({ ...current, [name]: undefined }));
     if (formError) setFormError("");
   }
 
@@ -93,7 +61,7 @@ export default function SignupForm() {
 
     setStatus("submitting");
     try {
-      await signup(values);
+      await signup({ name: values.name.trim(), email: values.email.trim(), password: values.password });
       setStatus("success");
       try {
         sessionStorage.setItem(SIGNUP_EMAIL_KEY, values.email.trim());
@@ -105,15 +73,20 @@ export default function SignupForm() {
       router.push(`/login?${params}`);
     } catch (error) {
       setFormError(error.message);
+      setServerErrors(error.fieldErrors ?? {});
       setStatus("idle");
     }
   }
 
   return (
     <>
-      <FormAlert message={formError} />
+      {formError && (
+        <Alert tone="error" className="mb-6">
+          {formError}
+        </Alert>
+      )}
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        <FormField
+        <TextField
           ref={nameRef}
           id="name"
           label="Full name"
@@ -124,7 +97,7 @@ export default function SignupForm() {
           onBlur={handleBlur}
           error={visibleError("name")}
         />
-        <FormField
+        <TextField
           ref={emailRef}
           id="email"
           label="Email address"
@@ -138,30 +111,29 @@ export default function SignupForm() {
           error={visibleError("email")}
         />
         <div>
-          <FormField
+          <TextField
             ref={passwordRef}
             id="password"
             label="Password"
             type={showPassword ? "text" : "password"}
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
             value={values.password}
             onChange={handleChange}
             onBlur={handleBlur}
             error={visibleError("password")}
-            hint="Use 8+ characters with at least one letter and one number."
+            hint={`Use ${PASSWORD_MIN_LENGTH}+ characters with at least one letter and one number.`}
             trailing={<PasswordToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
           />
           <PasswordStrength password={values.password} />
         </div>
-        <SubmitButton
-          isSubmitting={status === "submitting"}
-          isSuccess={status === "success"}
-          submittingLabel="Creating your account…"
-          successLabel="Account created! Taking you to log in…"
-        >
-          Create account
-        </SubmitButton>
+        <Button type="submit" size="lg" fullWidth isLoading={status === "submitting"} disabled={status === "success"}>
+          {status === "success"
+            ? "Account created. Taking you to log in..."
+            : status === "submitting"
+              ? "Creating your account..."
+              : "Create account"}
+        </Button>
         <p className="text-center text-xs leading-relaxed text-muted">
           By creating an account, you agree to Ecommerce Market&apos;s Terms of Service and Privacy Policy.
         </p>
@@ -169,10 +141,7 @@ export default function SignupForm() {
 
       <p className="mt-8 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link
-          href={redirectTo === "/" ? "/login" : `/login?next=${encodeURIComponent(redirectTo)}`}
-          className="font-medium text-ink underline underline-offset-4 hover:text-accent"
-        >
+        <Link href={loginUrl(redirectTo)} className="font-medium text-ink underline underline-offset-4 hover:text-accent">
           Log in
         </Link>
       </p>
